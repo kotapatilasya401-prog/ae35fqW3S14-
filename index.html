@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NextGen – Student Verification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+// Leave "" when the backend also serves this page (same site).
+// On GitHub Pages set it to your backend URL, e.g. "https://nextgen-api.onrender.com"
+window.NEXTGEN_API_URL = "";
+</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+<script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+:root{--bg:#eef1f4;--card:#fff;--ink:#162033;--mute:#667186;--line:#dde2ea;--brand:#0f6b8f;--bad:#c8372d;--ok:#2a7f62;--warn:#c98a1b;--gray:#8a93a3}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Public Sans",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5}
+button,input,select{font:inherit}
+.shell{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+nav{background:var(--ink);color:#c9d3e2;padding:24px 14px;display:flex;flex-direction:column;gap:4px}
+nav h1{font-size:20px;margin:0 8px 2px;color:#fff;letter-spacing:.2px}
+nav small{margin:0 8px 18px;color:#8fa0b8}
+nav button{background:none;border:0;color:inherit;text-align:left;padding:10px 12px;border-radius:6px;cursor:pointer}
+nav button:hover{background:#22304a}
+nav button.on{background:var(--brand);color:#fff}
+nav .sp{flex:1}
+main{padding:28px 32px;max-width:1100px;width:100%}
+h2{margin:0 0 4px;font-size:24px}
+.sub{color:var(--mute);margin:0 0 22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:22px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px}
+.stat b{display:block;font-size:30px;font-variant-numeric:tabular-nums}
+.stat span{color:var(--mute);font-size:13px}
+.stat.red b{color:var(--bad)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:18px}
+.panel h3{margin:0 0 12px;font-size:16px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.row{display:flex;align-items:center;gap:10px;margin:8px 0}
+.row .l{width:110px;color:var(--mute);font-size:13px}
+.bar{flex:1;height:10px;background:#e8ecf2;border-radius:5px;overflow:hidden;min-width:60px}
+.bar i{display:block;height:100%}
+.lo{background:var(--ok)}.mid{background:var(--warn)}.hi{background:var(--bad)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:13px}
+.b{display:inline-block;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:600;color:#fff}
+.b.flagged{background:var(--bad)}.b.pending{background:var(--warn)}.b.accepted{background:var(--ok)}.b.rejected{background:var(--gray)}
+.btn{background:var(--brand);color:#fff;border:0;padding:9px 16px;border-radius:6px;cursor:pointer;font-weight:600}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.sm{padding:4px 10px;font-size:13px;margin-right:6px}
+.btn.bad{background:var(--bad)}
+.btn:disabled{opacity:.5;cursor:default}
+label{display:block;font-size:13px;color:var(--mute);margin:12px 0 4px}
+input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:#fff}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+.err{color:var(--bad);margin:10px 0}
+.note{color:var(--ok);margin:10px 0}
+.result{border-left:5px solid var(--ok);}
+.result.flagged{border-left-color:var(--bad)}
+.login{max-width:380px;margin:12vh auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:28px}
+.login h1{margin:0 0 4px}
+.empty{color:var(--mute);padding:14px 0}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--mute);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+svg text{font-size:11px;fill:var(--ink)}
+.qr{display:inline-block;background:#fff;padding:10px;border:1px solid var(--line);border-radius:8px}
+.qr svg{display:block;width:190px;height:190px}
+.idbig{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+video.cam{width:100%;max-width:420px;border-radius:8px;background:#000;display:block;margin-top:12px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
+@media(max-width:760px){.shell{grid-template-columns:1fr}nav{flex-direction:row;flex-wrap:wrap;padding:12px}nav small,nav .sp{display:none}main{padding:18px}.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+const API_BASE = (window.NEXTGEN_API_URL || "").replace(/\/$/, "");
+
+async function api(path, { method = "GET", json, form, token } = {}) {
+  const headers = {};
+  let body;
+  if (json) { headers["Content-Type"] = "application/json"; body = JSON.stringify(json); }
+  if (form) body = new URLSearchParams(form);
+  if (token) headers.Authorization = "Bearer " + token;
+  const r = await fetch(API_BASE + path, { method, headers, body });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const msg = typeof d.detail === "string" ? d.detail : Array.isArray(d.detail) ? "Check the form fields" : "Request failed";
+    throw new Error(msg);
+  }
+  return d;
+}
+
+const riskClass = r => (r >= 0.5 ? "hi" : r >= 0.25 ? "mid" : "lo");
+const RiskBar = ({ r }) => (
+  <div className="row" style={{ margin: 0 }}>
+    <div className="bar"><i className={riskClass(r)} style={{ width: Math.max(r * 100, 2) + "%" }} /></div>
+    <span style={{ width: 34, fontVariantNumeric: "tabular-nums" }}>{r.toFixed(2)}</span>
+  </div>
+);
+const Badge = ({ s }) => <span className={"b " + s}>{s}</span>;
+
+function Login({ onLogin }) {
+  const [mode, setMode] = useState("in");
+  const [u, setU] = useState("");
+  const [p, setP] = useState("");
+  const [role, setRole] = useState("officer");
+  const [err, setErr] = useState("");
+  const [note, setNote] = useState("");
+  const signup = mode === "up";
+  async function submit(e) {
+    e.preventDefault(); setErr(""); setNote("");
+    if (signup && (u.trim().length < 3 || p.length < 8)) { setErr("Username needs at least 3 characters and password at least 8."); return; }
+    try {
+      if (signup) {
+        await api("/auth/register", { method: "POST", json: { username: u.trim(), password: p, role } });
+        setMode("in"); setP(""); setNote("Account created. Sign in to continue.");
+      } else {
+        const d = await api("/auth/login", { method: "POST", form: { username: u.trim(), password: p } });
+        onLogin({ token: d.access_token, role: d.role, username: u.trim() });
+      }
+    } catch (x) { setErr(x.message); }
+  }
+  return (
+    <form className="login" onSubmit={submit}>
+      <h1>NextGen</h1>
+      <p className="sub">{signup ? "Create your account" : "Student identity verification and fraud screening"}</p>
+      <label>Username</label><input value={u} onChange={e => setU(e.target.value)} autoComplete="username" />
+      <label>Password</label><input type="password" value={p} onChange={e => setP(e.target.value)} autoComplete={signup ? "new-password" : "current-password"} />
+      {signup && <>
+        <label>Account type</label>
+        <select value={role} onChange={e => setRole(e.target.value)}>
+          <option value="officer">Officer - registers students and decides</option>
+          <option value="admin">Admin - monitors only</option>
+        </select>
+        <p className="sub" style={{ fontSize: 13, margin: "8px 0 0" }}>The first admin can be created here. Further admin accounts are created by an officer after signing in.</p>
+      </>}
+      {err && <div className="err">{err}</div>}
+      {note && <div className="note">{note}</div>}
+      <p><button className="btn" type="submit">{signup ? "Create account" : "Sign in"}</button>{" "}
+      <button className="btn ghost" type="button" onClick={() => { setMode(signup ? "in" : "up"); setErr(""); setNote(""); }}>{signup ? "Back to sign in" : "Create account"}</button></p>
+    </form>
+  );
+}
+
+function Dashboard({ students, auth }) {
+  const total = students.length;
+  const count = st => students.filter(x => x.status === st).length;
+  const high = students.filter(s => s.risk_score >= 0.5).length;
+  const avg = total ? students.reduce((a, s) => a + s.risk_score, 0) / total : 0;
+  const buckets = [["0.00 – 0.24", 0, 0.25], ["0.25 – 0.49", 0.25, 0.5], ["0.50 – 0.74", 0.5, 0.75], ["0.75 – 1.00", 0.75, 1.01]]
+    .map(([l, a, b]) => [l, students.filter(s => s.risk_score >= a && s.risk_score < b).length, a]);
+  const maxB = Math.max(1, ...buckets.map(b => b[1]));
+  const inst = {};
+  students.forEach(s => { inst[s.institution] = inst[s.institution] || { n: 0, h: 0 }; inst[s.institution].n++; if (s.risk_score >= 0.5) inst[s.institution].h++; });
+  const alerts = students.filter(s => s.risk_score >= 0.5).sort((a, b) => b.risk_score - a.risk_score).slice(0, 5);
+  if (!total) return (
+    <div><h2>Dashboard</h2>
+      <p className="sub">No students yet. {auth.role === "officer" ? "Open Register student to add the first one." : "Officers register students; they will show up here."}</p></div>
+  );
+  return (
+    <div>
+      <h2>Dashboard</h2><p className="sub">Live view of verification results across all institutions.</p>
+      <div className="grid">
+        <div className="stat"><b>{total}</b><span>Students registered</span></div>
+        <div className="stat"><b>{count("pending")}</b><span>Waiting for decision</span></div>
+        <div className="stat"><b>{count("accepted")}</b><span>Accepted</span></div>
+        <div className="stat"><b>{count("rejected")}</b><span>Rejected</span></div>
+        <div className="stat red"><b>{high}</b><span>High risk ({Math.round((high / total) * 100)}%)</span></div>
+        <div className="stat"><b>{avg.toFixed(2)}</b><span>Average risk score</span></div>
+      </div>
+      <div className="two">
+        <div className="panel"><h3>Risk score distribution</h3>
+          {buckets.map(([l, n, a]) => (
+            <div className="row" key={l}><span className="l">{l}</span>
+              <div className="bar"><i className={riskClass(a)} style={{ width: (n / maxB) * 100 + "%" }} /></div><span>{n}</span></div>
+          ))}
+        </div>
+        <div className="panel"><h3>By institution</h3>
+          <table><thead><tr><th>Institution</th><th>Students</th><th>High risk</th></tr></thead>
+            <tbody>{Object.entries(inst).map(([k, v]) => <tr key={k}><td>{k}</td><td>{v.n}</td><td>{v.h}</td></tr>)}</tbody></table>
+        </div>
+      </div>
+      <div className="panel"><h3>Highest-risk alerts</h3>
+        {alerts.length === 0 ? <div className="empty">No high-risk students.</div> :
+          <div className="tw"><table><thead><tr><th>Student</th><th>Risk</th><th>Status</th><th>Why it was flagged</th></tr></thead>
+            <tbody>{alerts.map(s => <tr key={s.id}><td>{s.name}<br /><small style={{ color: "var(--mute)" }}>{s.student_code || s.aapar_id}</small></td>
+              <td style={{ width: 150 }}><RiskBar r={s.risk_score} /></td><td><Badge s={s.status} /></td><td>{s.reason}</td></tr>)}</tbody></table></div>}
+      </div>
+    </div>
+  );
+}
+
+function Register({ auth, reload, go }) {
+  const empty = { name: "", aapar_id: "", email: "", phone: "", institution: "" };
+  const [f, setF] = useState(empty);
+  const [res, setRes] = useState(null);
+  const [err, setErr] = useState("");
+  const set = k => e => setF({ ...f, [k]: e.target.value });
+  async function submit(e) {
+    e.preventDefault(); setErr(""); setRes(null);
+    try { setRes(await api("/students", { method: "POST", json: f, token: auth.token })); setF(empty); reload(); }
+    catch (x) { setErr(x.message); }
+  }
+  async function decide(status) {
+    setErr("");
+    try {
+      await api(`/students/${res.id}/status`, { method: "PATCH", json: { status }, token: auth.token });
+      setRes({ ...res, status }); reload();
+    } catch (x) { setErr(x.message); }
+  }
+  const fields = [["name", "Full name"], ["aapar_id", "AAPAR ID"], ["email", "Email"], ["phone", "Phone (10 digits)"], ["institution", "Institution"]];
+  return (
+    <div style={{ maxWidth: 520 }}>
+      <h2>Register student</h2><p className="sub">Each record is screened against existing students when you save it.</p>
+      <form className="panel" onSubmit={submit}>
+        {fields.map(([k, l]) => <div key={k}><label>{l}</label><input required value={f[k]} onChange={set(k)} /></div>)}
+        {err && <div className="err">{err}</div>}
+        <p><button className="btn" type="submit">Verify and save</button></p>
+      </form>
+      {res && (
+        <div className="panel result">
+          <h3>Registration Successful</h3>
+          <p>Student registered successfully!</p>
+          {res.student_code && <>
+            <h3 style={{ marginTop: 16 }}>Student QR Code</h3>
+            <QR text={res.student_code} />
+            <p>Unique Student ID: <span className="idbig">{res.student_code}</span></p>
+            <p className="sub" style={{ marginBottom: 10 }}>The QR holds only this ID. No personal details are inside it.</p>
+            <button type="button" className="btn ghost" onClick={() => go(res.student_code)}>Open in Verify tab</button>
+          </>}
+          <h3 style={{ marginTop: 18 }}>Decision</h3>
+          <p className="sub" style={{ marginBottom: 10 }}>Status: <Badge s={res.status} />. Choose Accept or Reject for this student.</p>
+          <div className="acts" style={{ marginTop: 0 }}>
+            <button type="button" className="btn" disabled={res.status === "accepted"} onClick={() => decide("accepted")}>Accept</button>
+            <button type="button" className="btn bad" disabled={res.status === "rejected"} onClick={() => decide("rejected")}>Reject</button>
+          </div>
+          <p className="note" style={{ marginBottom: 0 }}>Registration completed</p>
+        </div>
+      )}
+      {res && (
+        <div className={"panel result " + (res.risk_score >= 0.5 ? "flagged" : "")}>
+          <h3>{res.name} {res.risk_score >= 0.5 && <span className="b flagged">High risk</span>}</h3>
+          <RiskBar r={res.risk_score} />
+          <p style={{ marginBottom: 0 }}>{res.reason || "No duplicate or anomaly signals found."}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Students({ students, auth, reload }) {
+  const [flt, setFlt] = useState("all");
+  const [err, setErr] = useState("");
+  const officer = auth.role === "officer";
+  const rows = students.filter(s => flt === "all" || (flt === "flagged" ? s.risk_score >= 0.5 : s.status === flt));
+  const labels = { all: "All students", pending: "Pending", accepted: "Accepted", rejected: "Rejected", flagged: "High risk" };
+  async function setStatus(id, status) {
+    setErr("");
+    try { await api(`/students/${id}/status`, { method: "PATCH", json: { status }, token: auth.token }); reload(); }
+    catch (x) { setErr(x.message); }
+  }
+  return (
+    <div>
+      <h2>Students</h2>
+      <p className="sub">{officer ? "Review each student and choose Accept or Reject." : "Read-only view. Only officers can accept or reject students."}</p>
+      <div style={{ maxWidth: 220, marginBottom: 14 }}>
+        <select value={flt} onChange={e => setFlt(e.target.value)}>
+          {Object.keys(labels).map(o => <option key={o} value={o}>{labels[o]}</option>)}
+        </select>
+      </div>
+      {err && <div className="err">{err}</div>}
+      <div className="panel tw">
+        {rows.length === 0 ? <div className="empty">{students.length ? "No students match this filter." : "No students yet."}</div> :
+          <table><thead><tr><th>Student ID</th><th>Name</th><th>AAPAR ID</th><th>Institution</th><th>Risk</th><th>Status</th><th>Reason</th>{officer && <th>Decision</th>}</tr></thead>
+            <tbody>{rows.map(s => (
+              <tr key={s.id}><td>{s.student_code}</td><td>{s.name}</td><td>{s.aapar_id}</td><td>{s.institution}</td>
+                <td style={{ width: 140 }}><RiskBar r={s.risk_score} /></td>
+                <td><Badge s={s.status} />{s.risk_score >= 0.5 && <> <span className="b flagged">High risk</span></>}</td><td>{s.reason}</td>
+                {officer && <td style={{ whiteSpace: "nowrap" }}>
+                  <button className="btn sm" disabled={s.status === "accepted"} onClick={() => setStatus(s.id, "accepted")}>Accept</button>
+                  <button className="btn sm bad" disabled={s.status === "rejected"} onClick={() => setStatus(s.id, "rejected")}>Reject</button></td>}
+              </tr>))}</tbody></table>}
+      </div>
+    </div>
+  );
+}
+
+const EDGE = { phone: "#c98a1b", email: "#0f6b8f", aapar_id: "#c8372d" };
+const NODE = { flagged: "#c8372d", pending: "#c98a1b", accepted: "#2a7f62", rejected: "#8a93a3" };
+
+function GraphView({ auth, students }) {
+  const [g, setG] = useState(null);
+  const [err, setErr] = useState("");
+  useEffect(() => { api("/graph", { token: auth.token }).then(setG).catch(x => setErr(x.message)); }, [students.length]);
+  if (err) return <div className="err">{err}</div>;
+  if (!g) return <p className="sub">Loading graph…</p>;
+  const n = g.nodes.length, cx = 320, cy = 230, R = 175;
+  const pos = {};
+  g.nodes.forEach((nd, i) => { const a = (2 * Math.PI * i) / n - Math.PI / 2; pos[nd.id] = [cx + R * Math.cos(a), cy + R * Math.sin(a)]; });
+  const name = id => (g.nodes.find(x => x.id === id) || {}).name || id;
+  return (
+    <div>
+      <h2>Relationship graph</h2><p className="sub">Students linked by a shared phone number, email, or AAPAR ID. Linked groups are the ones to investigate.</p>
+      <div className="two" style={{ gridTemplateColumns: "1.5fr 1fr" }}>
+        <div className="panel">
+          <svg viewBox="0 0 640 460" width="100%" role="img" aria-label="Student relationship graph">
+            {g.edges.map((e, i) => pos[e.source] && pos[e.target] &&
+              <line key={i} x1={pos[e.source][0]} y1={pos[e.source][1]} x2={pos[e.target][0]} y2={pos[e.target][1]}
+                stroke={EDGE[e.reason.replace("same ", "")] || "#999"} strokeWidth="2.5" opacity=".85"><title>{e.reason}</title></line>)}
+            {g.nodes.map(nd => (
+              <g key={nd.id}><circle cx={pos[nd.id][0]} cy={pos[nd.id][1]} r="9" fill={NODE[nd.flagged ? "flagged" : nd.status] || "#999"}><title>{nd.name} ({nd.status}{nd.flagged ? ", high risk" : ""})</title></circle>
+                <text x={pos[nd.id][0]} y={pos[nd.id][1] + (pos[nd.id][1] < cy ? -14 : 22)} textAnchor="middle">{String(nd.name).split(" ")[0]}</text></g>))}
+          </svg>
+          <div className="legend">
+            <span><i style={{ background: EDGE.phone }} />Same phone</span><span><i style={{ background: EDGE.email }} />Same email</span><span><i style={{ background: EDGE.aapar_id }} />Same AAPAR ID</span>
+            <span><i style={{ background: NODE.flagged }} />High risk</span><span><i style={{ background: NODE.pending }} />Pending</span><span><i style={{ background: NODE.accepted }} />Accepted</span><span><i style={{ background: NODE.rejected }} />Rejected</span>
+          </div>
+        </div>
+        <div className="panel"><h3>Suspicious clusters</h3>
+          {g.suspicious_clusters.length === 0 ? <div className="empty">No linked students found.</div> :
+            g.suspicious_clusters.map((c, i) => (
+              <div key={i} style={{ marginBottom: 12 }}><b>Group {i + 1}</b> ({c.length} students)
+                <div style={{ color: "var(--mute)" }}>{c.map(name).join(", ")}</div></div>))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QR({ text }) {
+  let svg = "";
+  try { const q = qrcode(0, "M"); q.addData(text); q.make(); svg = q.createSvgTag(6, 4); } catch (e) {}
+  return svg
+    ? <div className="qr" role="img" aria-label={"QR code for " + text} dangerouslySetInnerHTML={{ __html: svg }} />
+    : <div className="empty">QR library could not load. Student ID: {text}</div>;
+}
+
+const PLACES = ["Admission counter", "Main gate", "Admin office", "Exam cell"];
+const CODE_RE = /NGI-\d{4}-\d{3,}/i;
+const ACT = {
+  LOGIN: "Signed in", LOGIN_FAILED: "Failed sign-in", ADD_STUDENT: "Student registered",
+  STATUS_CHANGE: "Status changed", VERIFY_SCAN: "Record verified", VERIFY_NOT_FOUND: "Verify: ID not found"
+};
+function how(r) {
+  const d = r.details || "";
+  const m = /method=(\w+)/.exec(d), l = /location=([^;]+)/.exec(d);
+  if (!m) return d;
+  return (m[1] === "qr" ? "QR scan" : "Typed ID") + (l ? " at " + l[1].trim() : "");
+}
+
+function AuditTable({ rows }) {
+  if (!rows.length) return <div className="empty">No activity recorded yet.</div>;
+  return (
+    <table><thead><tr><th>When</th><th>Who</th><th>What</th><th>How and where</th><th>IP address</th></tr></thead>
+      <tbody>{rows.map(r => (
+        <tr key={r.id}>
+          <td style={{ whiteSpace: "nowrap" }}>{r.when ? new Date(r.when).toLocaleString() : ""}</td>
+          <td>{r.who}</td><td>{ACT[r.action] || r.action}</td><td>{how(r)}</td><td>{r.ip_address || "–"}</td>
+        </tr>))}</tbody></table>
+  );
+}
+
+function decodeFile(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement("canvas"); c.width = img.width; c.height = img.height;
+      const x = c.getContext("2d"); x.drawImage(img, 0, 0);
+      const d = x.getImageData(0, 0, c.width, c.height);
+      const r = window.jsQR && jsQR(d.data, d.width, d.height);
+      URL.revokeObjectURL(img.src);
+      r && r.data ? resolve(r.data) : reject(new Error("No QR code found in this image."));
+    };
+    img.onerror = () => reject(new Error("Could not read this image."));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function Scanner({ onCode }) {
+  const video = useRef(null);
+  const cb = useRef(onCode); cb.current = onCode;
+  const [msg, setMsg] = useState("Starting camera…");
+  useEffect(() => {
+    let stream, raf, stopped = false;
+    const canvas = document.createElement("canvas");
+    (async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        const v = video.current; v.srcObject = stream; await v.play();
+        setMsg("Point the camera at the student's QR code.");
+        const tick = () => {
+          if (stopped) return;
+          if (v.readyState === v.HAVE_ENOUGH_DATA) {
+            canvas.width = v.videoWidth; canvas.height = v.videoHeight;
+            const ctx = canvas.getContext("2d", { willReadFrequently: true });
+            ctx.drawImage(v, 0, 0);
+            const d = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const r = window.jsQR && jsQR(d.data, d.width, d.height);
+            if (r && r.data) { cb.current(r.data); return; }
+          }
+          raf = requestAnimationFrame(tick);
+        };
+        tick();
+      } catch (e) { setMsg("Camera not available. Type the ID or upload a QR image instead."); }
+    })();
+    return () => { stopped = true; cancelAnimationFrame(raf); stream && stream.getTracks().forEach(t => t.stop()); };
+  }, []);
+  return <div><video ref={video} className="cam" playsInline muted /><p className="sub" style={{ marginTop: 8 }}>{msg}</p></div>;
+}
+
+function Verify({ auth, preset }) {
+  const [code, setCode] = useState(preset || "");
+  const [place, setPlace] = useState(PLACES[0]);
+  const [scanning, setScanning] = useState(false);
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (preset) setCode(preset); }, [preset]);
+  async function lookup(raw, method) {
+    setErr(""); setData(null);
+    const m = CODE_RE.exec(raw || "");
+    if (!m) { setErr("This is not a NextGen student QR code."); return; }
+    const id = m[0].toUpperCase();
+    setCode(id); setBusy(true);
+    try { setData(await api(`/verify/${encodeURIComponent(id)}?method=${method}&location=${encodeURIComponent(place)}`, { token: auth.token })); }
+    catch (x) { setErr(x.message); }
+    setBusy(false);
+  }
+  async function onFile(e) {
+    const f = e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    try { lookup(await decodeFile(f), "qr"); } catch (x) { setErr(x.message); setData(null); }
+  }
+  return (
+    <div>
+      <h2>Verify student</h2><p className="sub">Scan the student's QR code. Every scan is recorded in the audit log.</p>
+      <div className="panel" style={{ maxWidth: 560 }}>
+        <label style={{ marginTop: 0 }}>Where are you verifying?</label>
+        <select value={place} onChange={e => setPlace(e.target.value)}>{PLACES.map(p => <option key={p}>{p}</option>)}</select>
+        <div className="acts">
+          <button type="button" className="btn" onClick={() => { setErr(""); setScanning(s => !s); }}>{scanning ? "Stop camera" : "Scan QR with camera"}</button>
+          <label className="btn ghost" style={{ display: "inline-block", margin: 0, color: "var(--ink)", fontSize: 15, cursor: "pointer" }}>
+            Upload QR image<input type="file" accept="image/*" hidden onChange={onFile} />
+          </label>
+        </div>
+        {scanning && <Scanner onCode={t => { setScanning(false); lookup(t, "qr"); }} />}
+        <form onSubmit={e => { e.preventDefault(); lookup(code, "manual"); }}>
+          <label>Or type the Student ID</label>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input value={code} onChange={e => setCode(e.target.value)} placeholder="NGI-2026-001" />
+            <button className="btn" type="submit" disabled={busy}>Verify</button>
+          </div>
+        </form>
+        {err && <div className="err">{err}</div>}
+      </div>
+      {data && (
+        <>
+          <div className="panel result" style={{ maxWidth: 560 }}>
+            <h3>Student record found</h3>
+            <table><tbody>
+              <tr><th>Student ID</th><td><span className="idbig">{data.student.student_code}</span></td></tr>
+              <tr><th>Name</th><td>{data.student.name}</td></tr>
+              <tr><th>Institution</th><td>{data.student.institution}</td></tr>
+            </tbody></table>
+          </div>
+          <div className="panel tw"><h3>Audit log for this student</h3><AuditTable rows={data.audit_log} /></div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function AuditLog({ auth }) {
+  const [rows, setRows] = useState(null);
+  const [err, setErr] = useState("");
+  const load = useCallback(() => {
+    setErr("");
+    api("/audit-logs?limit=100", { token: auth.token }).then(setRows).catch(x => setErr(x.message));
+  }, [auth]);
+  useEffect(() => { load(); }, [load]);
+  return (
+    <div>
+      <h2>Audit log</h2><p className="sub">Who did what, when, how and from which IP address. Latest 100 entries.</p>
+      <p><button className="btn ghost" onClick={load}>Refresh</button></p>
+      {err && <div className="err">{err}</div>}
+      {!rows && !err && <p className="sub">Loading…</p>}
+      {rows && <div className="panel tw"><AuditTable rows={rows} /></div>}
+    </div>
+  );
+}
+
+function Accounts({ auth }) {
+  const [f, setF] = useState({ username: "", password: "", role: "officer" });
+  const [err, setErr] = useState("");
+  const [note, setNote] = useState("");
+  const set = k => e => setF({ ...f, [k]: e.target.value });
+  async function submit(e) {
+    e.preventDefault(); setErr(""); setNote("");
+    const username = f.username.trim();
+    if (username.length < 3 || f.password.length < 8) { setErr("Username needs at least 3 characters and password at least 8."); return; }
+    try {
+      await api("/auth/register", { method: "POST", json: { ...f, username }, token: auth.token });
+      setNote("Account created for " + username + " (" + f.role + ").");
+      setF({ username: "", password: "", role: f.role });
+    } catch (x) { setErr(x.message); }
+  }
+  return (
+    <div style={{ maxWidth: 520 }}>
+      <h2>Create account</h2><p className="sub">Add an officer or an admin. Admins can only monitor.</p>
+      <form className="panel" onSubmit={submit}>
+        <label style={{ marginTop: 0 }}>Username</label><input value={f.username} onChange={set("username")} />
+        <label>Password (8+ characters)</label><input type="password" value={f.password} onChange={set("password")} />
+        <label>Account type</label>
+        <select value={f.role} onChange={set("role")}>
+          <option value="officer">Officer</option>
+          <option value="admin">Admin</option>
+        </select>
+        {err && <div className="err">{err}</div>}
+        {note && <div className="note">{note}</div>}
+        <p><button className="btn" type="submit">Create account</button></p>
+      </form>
+    </div>
+  );
+}
+
+function App() {
+  const [auth, setAuth] = useState(null);
+  const [tab, setTab] = useState("dashboard");
+  const [students, setStudents] = useState([]);
+  const [preset, setPreset] = useState("");
+  const reload = useCallback(async () => {
+    if (!auth) return;
+    try { setStudents(await api("/students", { token: auth.token })); } catch (x) { if (x.message.includes("token")) setAuth(null); }
+  }, [auth]);
+  useEffect(() => { reload(); }, [reload]);
+  if (!auth) return <Login onLogin={a => { setTab("dashboard"); setAuth(a); }} />;
+  const officer = auth.role === "officer";
+  const items = officer
+    ? [["dashboard", "Dashboard"], ["register", "Register student"], ["verify", "Verify student"], ["students", "Students"], ["graph", "Relationship graph"], ["accounts", "Create account"]]
+    : [["dashboard", "Dashboard"], ["students", "Students"], ["graph", "Relationship graph"], ["audit", "Audit log"]];
+  return (
+    <div className="shell">
+      <nav>
+        <h1>NextGen</h1><small>Signed in as {auth.username} ({auth.role})</small>
+        {items.map(([k, l]) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}
+        <div className="sp" />
+        <button onClick={() => { setStudents([]); setAuth(null); }}>Sign out</button>
+      </nav>
+      <main>
+        {tab === "dashboard" && <Dashboard students={students} auth={auth} />}
+        {officer && tab === "register" && <Register auth={auth} reload={reload} go={c => { setPreset(c); setTab("verify"); }} />}
+        {officer && tab === "verify" && <Verify auth={auth} preset={preset} />}
+        {officer && tab === "accounts" && <Accounts auth={auth} />}
+        {!officer && tab === "audit" && <AuditLog auth={auth} />}
+        {tab === "students" && <Students students={students} auth={auth} reload={reload} />}
+        {tab === "graph" && <GraphView auth={auth} students={students} />}
+      </main>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
