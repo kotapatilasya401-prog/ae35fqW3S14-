@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+sqlalchemy>=2.0
+bcrypt
+PyJWT
+networkx
+scikit-learn
+numpy
+python-multipart
+psycopg2-binary
