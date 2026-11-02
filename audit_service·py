@@ -1,0 +1,45 @@
+from db import SessionLocal
+from models import AuditLog, User
+
+
+def log_action(user_id, action, entity_type=None, entity_id=None,
+               details=None, ip_address=None):
+    """Add one row to the audit log."""
+    with SessionLocal() as db:
+        db.add(AuditLog(user_id=user_id, action=action, entity_type=entity_type,
+                        entity_id=entity_id, details=details, ip_address=ip_address))
+        db.commit()
+
+
+def _to_dict(a: AuditLog, username):
+    # Field names (who / when) are what the web page expects.
+    return {
+        "id": a.id,
+        "who": username or "–",
+        "when": a.created_at.isoformat() + "Z" if a.created_at else None,
+        "action": a.action,
+        "entity_type": a.entity_type,
+        "entity_id": a.entity_id,
+        "details": a.details,
+        "ip_address": a.ip_address,
+    }
+
+
+def get_audit_logs(limit: int = 50):
+    """Latest logs, newest first, with the username."""
+    limit = max(1, min(int(limit), 500))
+    with SessionLocal() as db:
+        rows = (db.query(AuditLog, User.username)
+                .outerjoin(User, User.id == AuditLog.user_id)
+                .order_by(AuditLog.id.desc()).limit(limit).all())
+    return [_to_dict(a, u) for a, u in rows]
+
+
+def get_student_logs(student_id: int, limit: int = 50):
+    """Audit trail for one student."""
+    with SessionLocal() as db:
+        rows = (db.query(AuditLog, User.username)
+                .outerjoin(User, User.id == AuditLog.user_id)
+                .filter(AuditLog.entity_type == "student", AuditLog.entity_id == student_id)
+                .order_by(AuditLog.id.desc()).limit(limit).all())
+    return [_to_dict(a, u) for a, u in rows]
